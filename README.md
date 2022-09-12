@@ -1,0 +1,3 @@
+# Senior Project - Genetic Algorithm
+
+The goal of this project will be to implement a genetic algorithm to demonstrate possible solutions to the well-known vehicle routing problem. Genetic algorithms are useful for optimization problems as they mimic the process of natural selection, and the vehicle routing problem attempts to find the best route for one or more delivery vehicles, optimizing for factors such as cost, speed, or distance. The plan is to build a generalized genetic algorithm from scratch which can then be applied to given variations of the routing problem and then analyze the results.
