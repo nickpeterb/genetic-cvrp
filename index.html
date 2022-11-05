@@ -1,0 +1,19 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="index.css" />
+        <title>Project</title>
+    </head>
+    <body>
+        <div class="container">
+            <h1>One Vehicle, Shortest Distance</h1>
+            <div id="app"></div>
+            <button id="run-button" onclick="run()">Run GA</button>
+            <div>GA Shortest Distance: <span id="bestDistance"></span>px</div>
+            <div>Brute Force Shortest Distance: <span id="bruteBest"></span></div>
+            <div>Generations: <span id="generations"></span></div>
+        </div>
+        <script type="module" src="src/app.ts"></script>
+    </body>
+</html>

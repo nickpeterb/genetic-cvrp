@@ -1,0 +1,16 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box !important;
+}
+
+body {
+    color: whitesmoke;
+    background-color: #37474f;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.container {
+    padding: 0 15px;
+}

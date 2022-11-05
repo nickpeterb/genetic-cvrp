@@ -1,84 +1,113 @@
-import { Member } from './member';
+import { Member } from './Member';
+import P5 from 'p5';
+import { TSPGraph } from './Graph';
+//import { annealTSP } from './anneal';
 
 export class Population {
-	mutationRate: number; // Mutation rate
-	population: Member[] = []; // Array to hold the current population
-	matingPool: Member[] = []; // Array which we will use for our "mating pool"
-	target: string; // Target phrase
-	generations: number = 0; // Number of generations
-	finished: boolean = false; // Are we finished evolving?
-	perfectScore: number = 1;
+    mutationRate: number; // Mutation rate
+    population: Member[] = []; // Array to hold the current population
+    generations: number = 0; // Number of generations
+    // isFinished: boolean = false; // Are we finished evolving?
 
-	constructor(target: string, mutationRate: number, populationSize: number) {
-		this.target = target;
-		this.mutationRate = mutationRate;
-		for (let i = 0; i < populationSize; i++) {
-			this.population.push(new Member(this.target.length));
-		}
-	}
+    // just have this be what citiesGraph.xyLookup is
+    cities: P5.Vector[] = [];
 
-	/** Set the fitness value for every member of the population */
-	getAllFitnessValues(): void {
-		console.log();
-		for (let i = 0; i < this.population.length; i++) {
-			this.population[i].calcFitness(this.target);
-		}
-	}
+    citiesGraph: TSPGraph = new TSPGraph([]);
 
-	/** Generate a mating pool */
-	naturalSelection(): void {
-		this.matingPool = []; // Clear the mating pool
+    //annealingSolution: number[] = [];
 
-		let maxFitness: number = 0;
-		let minFitness: number = 1;
-		for (const member of this.population) {
-			if (member.fitness > maxFitness) maxFitness = member.fitness;
-			if (member.fitness < minFitness) minFitness = member.fitness;
-		}
+    constructor(totalCities: number, mutationRate: number, populationSize: number, canvasDimention: number) {
+        const p5 = P5.prototype;
+        // Create coordiantes for each city
+        for (let i = 0; i < totalCities; i++) {
+            // Give it some padding
+            let x = Math.floor(Math.random() * (canvasDimention - 20));
+            let y = Math.floor(Math.random() * (canvasDimention - 20));
+            x += 10;
+            y += 10;
+            const v = p5.createVector(x, y);
+            this.cities.push(v);
+        }
 
-		// Based on fitness, each member will get added to the mating pool a certain number of times
-		// a higher fitness = more entries to mating pool = more likely to be picked as a parent
-		// a lower fitness = fewer entries to mating pool = less likely to be picked as a parent
-		for (const member of this.population) {
-			const fitness: number = this.mapRange(member.fitness, minFitness, maxFitness, 0, 1); // normalize the fitness value so that most fit member = 1, least fit = 0
-			const n = Math.floor(fitness * 100); // Arbitrary multiplier, we can also use monte carlo method
+        let initialPopulation: Member[] = [];
+        for (let i = 0; i < populationSize; i++) initialPopulation.push(new Member(totalCities));
 
-			// push into mating pool n number of times
-			for (let j = 0; j < n; j++) {
-				this.matingPool.push(member);
-			}
-		}
-	}
+        this.population = [...initialPopulation];
 
-	/**
-	 * Re-maps a number from one range to another.
-	 * e.g. x = 50, in_min = 0, in_max = 100, out_min = 0, out_max = 1
-	 * then result = 0.5
-	 */
-	mapRange(x: number, in_min: number, in_max: number, out_min: number, out_max: number) {
-		return ((x - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
-	}
+        this.mutationRate = mutationRate;
+        this.citiesGraph = new TSPGraph(this.cities);
+    }
 
-	/** Create a new generation */
-	newGeneration(): void {
-		for (let i = 0; i < this.population.length; i++) {
-			const a: number = Math.floor(Math.random() * this.matingPool.length);
-			const b: number = Math.floor(Math.random() * this.matingPool.length);
-			const partnerA = this.matingPool[a];
-			const partnerB = this.matingPool[b];
-			const child = partnerA.crossover(partnerB);
-			child.mutate(this.mutationRate);
-			this.population[i] = child;
-		}
-		this.generations += 1;
-	}
+    /** Set the fitness value for every member of the population */
+    getAllFitnessValues(): void {
+        let totalFitness = 0;
+        for (let i = 0; i < this.population.length; i++) {
+            totalFitness += this.population[i].calcFitness(this.citiesGraph?.graph);
+        }
+        for (let i = 0; i < this.population.length; i++) {
+            this.population[i].fitness = this.population[i].fitness / totalFitness;
+        }
+        //console.log('getAllFitnessValues', this.population);
+    }
 
-	getMostFitMember() {
-		const mostFitMember = this.population.reduce(
-			(prevMember, currMember) => (currMember.fitness > prevMember.fitness ? currMember : prevMember),
-			this.population[0]
-		);
-		if (mostFitMember.fitness === this.perfectScore) this.finished = true;
-		return mostFitMember;
-	}
+    /** Create a new generation */
+    newGeneration(): void {
+        if (this.population.length === 0) console.error('Error Initializing Population');
+        //if (this.matingPool.length === 0) console.error('Error Initializing Mating Pool');
+        let newPopulation: Member[] = [];
+        for (let i = 0; i < this.population.length; i++) {
+            //const newMember = this.selectMember(this.population);
+            const parentA = this.selectMember(this.population);
+            const parentB = this.selectMember(this.population);
+            const newMember = this.crossover(parentA, parentB);
+            newMember.mutate(this.mutationRate);
+            newPopulation.push(newMember);
+        }
+        this.population = [...newPopulation];
+        //console.log('newGeneration', this.population);
+        this.generations += 1;
+    }
+
+    /**
+     * Picks a member of the popultion based on its normalized fitness (i.e the its probability)
+     * @param population the current population with normalized values
+     * @returns a member of the population
+     */
+    selectMember(population: Member[]): Member {
+        let index = 0;
+        let random = Math.random();
+        while (random > 0) {
+            const probability = population[index].fitness;
+            random -= probability;
+            index++;
+        }
+        index--;
+        return population[index];
+    }
+
+    crossover(memberA: Member, memberB: Member) {
+        const start = this.randomInt(0, memberA.genes.length);
+        const end = this.randomInt(start + 1, memberA.genes.length);
+        const newMemberRoute: string[] = memberA.genes.slice(start, end);
+        for (let i = 0; i < memberB.genes.length; i++) {
+            const cityIndex = memberB.genes[i];
+            if (!newMemberRoute.includes(cityIndex)) newMemberRoute.push(cityIndex);
+        }
+        const newMember = new Member(this.cities.length, newMemberRoute);
+        return newMember;
+    }
+
+    randomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+    }
+
+    getMostFitMember(): Member {
+        let mostFitMember = this.population[0];
+        for (const member of this.population) {
+            if (member.fitness > mostFitMember.fitness) mostFitMember = member;
+        }
+        return mostFitMember;
+    }
 }
