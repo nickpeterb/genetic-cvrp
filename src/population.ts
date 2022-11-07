@@ -7,7 +7,7 @@ export class Population {
     mutationRate: number; // Mutation rate
     population: Member[] = []; // Array to hold the current population
     generations: number = 0; // Number of generations
-    // isFinished: boolean = false; // Are we finished evolving?
+    fleetSize: number;
 
     // just have this be what citiesGraph.xyLookup is
     cities: P5.Vector[] = [];
@@ -16,7 +16,7 @@ export class Population {
 
     //annealingSolution: number[] = [];
 
-    constructor(totalCities: number, mutationRate: number, populationSize: number, canvasDimention: number) {
+    constructor(totalCities: number, fleetSize: number, mutationRate: number, populationSize: number, canvasDimention: number) {
         const p5 = P5.prototype;
         // Create coordiantes for each city
         for (let i = 0; i < totalCities; i++) {
@@ -30,10 +30,10 @@ export class Population {
         }
 
         let initialPopulation: Member[] = [];
-        for (let i = 0; i < populationSize; i++) initialPopulation.push(new Member(totalCities));
+        for (let i = 0; i < populationSize; i++) initialPopulation.push(new Member(totalCities, fleetSize));
 
         this.population = [...initialPopulation];
-
+        this.fleetSize = fleetSize;
         this.mutationRate = mutationRate;
         this.citiesGraph = new TSPGraph(this.cities);
     }
@@ -57,6 +57,7 @@ export class Population {
         let newPopulation: Member[] = [];
         for (let i = 0; i < this.population.length; i++) {
             //const newMember = this.selectMember(this.population);
+
             const parentA = this.selectMember(this.population);
             const parentB = this.selectMember(this.population);
             const newMember = this.crossover(parentA, parentB);
@@ -86,15 +87,15 @@ export class Population {
     }
 
     crossover(memberA: Member, memberB: Member) {
-        const start = this.randomInt(0, memberA.genes.length);
+        /*  const start = this.randomInt(0, memberA.genes.length);
         const end = this.randomInt(start + 1, memberA.genes.length);
         const newMemberRoute: string[] = memberA.genes.slice(start, end);
         for (let i = 0; i < memberB.genes.length; i++) {
             const cityIndex = memberB.genes[i];
             if (!newMemberRoute.includes(cityIndex)) newMemberRoute.push(cityIndex);
         }
-        const newMember = new Member(this.cities.length, newMemberRoute);
-        return newMember;
+        const newMember = new Member(this.cities.length, newMemberRoute); */
+        return memberA;
     }
 
     randomInt(min, max) {
