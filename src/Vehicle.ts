@@ -1,10 +1,6 @@
 export class Vehicle {
     route: string[] = [];
-    //distance: number | null = null;
-
-    constructor(route?: string[]) {
-        if (route) this.route = route;
-    }
+    distance: number | null = null;
 
     calcDistance(citiesGraph: { [key: string]: { [key: string]: number } }) {
         let distance = 0;
@@ -13,8 +9,7 @@ export class Vehicle {
             const nextCity = this.route[i + 1];
             distance += citiesGraph[city][nextCity];
         }
-        const roundDist = Math.round(distance);
-        //this.distance = roundDist;
-        return roundDist;
+        this.distance = Math.round(distance);
+        return this.distance;
     }
 }

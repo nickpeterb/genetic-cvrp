@@ -2,7 +2,7 @@ import p5 from 'p5';
 
 export class TSPGraph {
     noOfVertecies: number;
-    graph: { [key: string]: { [key: string]: number } } = {};
+    graph = {};
     xyLookup: { [key: string]: p5.Vector } = {};
 
     constructor(cities: p5.Vector[]) {
@@ -17,9 +17,6 @@ export class TSPGraph {
                     const sisterCity = cities[sisterIndex];
                     const sisterHexId = sisterIndex.toString(16);
                     this.graph[cityHexId][sisterHexId] = Math.round(this.calcDistance(city.x, city.y, sisterCity.x, sisterCity.y));
-                } else {
-                    const sisterHexId = sisterIndex.toString(16);
-                    this.graph[cityHexId][sisterHexId] = 0;
                 }
             }
         }
