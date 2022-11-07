@@ -9,22 +9,26 @@ export class Member {
     fitness: number = 0;
 
     // create random "DNA"
-    constructor(totalCities: number, fleetSize: number, routes?: Vehicle[]) {
-        if (routes !== undefined) this.routes = routes;
+    constructor(totalCities: number, fleetSize: number, parentDNA?: Vehicle[]) {
+        if (parentDNA !== undefined) this.routes = parentDNA;
         else {
             // generate random route
             const indexes = Array.from(Array(totalCities).keys());
-            const shuffledIndexes: number[] = P5.prototype.shuffle(indexes);
-            const randomRoute = shuffledIndexes.map((index) => index.toString(16));
+            //const shuffledIndexes: number[] = P5.prototype.shuffle(indexes);
+            //const randomRoute = shuffledIndexes.map((index) => index.toString(16));
+            const route = indexes.map((index) => index.toString(16));
             // split into multiple subroutes
-            this.routes = this.splitRoute(randomRoute, totalCities / fleetSize);
+            this.routes = this.splitRoute(route, Math.ceil(totalCities / fleetSize));
         }
     }
 
     splitRoute(route: string[], chunkSize: number): Vehicle[] {
         const routes: Vehicle[] = [];
+        const depot = '0';
         for (let i = 0; i < route.length; i += chunkSize) {
             const subRoute = route.slice(i, i + chunkSize);
+            if (subRoute[0] !== depot) subRoute.unshift(depot);
+            if (subRoute[subRoute.length - 1] !== depot) subRoute.push(depot);
             const vehicle = new Vehicle(subRoute);
             routes.push(vehicle);
         }
@@ -45,19 +49,21 @@ export class Member {
     /** Based on a mutation probability, mutate a part of current DNA */
     mutate(mutationRate: number): void {
         if (Math.random() < mutationRate) {
-            const randVehicleA = Math.floor(Math.random() * this.routes.length);
-            const randVehicleB = Math.floor(Math.random() * this.routes.length);
+            const randVehicleA = this.getRandomInt(0, this.routes.length);
+            const randVehicleB = this.getRandomInt(0, this.routes.length);
+            // if (randVehicleA === undefined || randVehicleB === undefined)
+            //     console.log('randVehicleA, randVehicleB', randVehicleA, randVehicleB);
 
-            const indexA = Math.floor(Math.random() * this.routes[randVehicleA].route.length);
-            const indexB = Math.floor(Math.random() * this.routes[randVehicleB].route.length);
+            const indexA = this.getRandomInt(1, this.routes[randVehicleA].route.length - 1);
+            const indexB = this.getRandomInt(1, this.routes[randVehicleB].route.length - 1);
+            //if (indexA === undefined || indexB === undefined) console.log('indexA, indexB', indexA, indexB);
 
             const geneA = this.routes[randVehicleA].route[indexA];
             const geneB = this.routes[randVehicleB].route[indexB];
+            //if (geneA === undefined || geneB === undefined) console.log('geneA, geneB', geneA, geneB);
 
             this.routes[randVehicleA].route[indexA] = geneB;
             this.routes[randVehicleB].route[indexB] = geneA;
-            // let indexB = indexA + 1;
-            // if (indexB >= this.genes.length) indexB = indexA - 1;
         }
     }
 
@@ -86,9 +92,9 @@ export class Member {
         }
     } */
 
-    /* swapGenes(a: number, b: number): void {
-        var temp = this.genes[b];
-        this.genes[b] = this.genes[a];
-        this.genes[a] = temp;
-    } */
+    getRandomInt(min: number, max: number) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+    }
 }

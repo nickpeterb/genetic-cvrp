@@ -2,12 +2,12 @@ import P5 from 'p5';
 import { Member } from './Member';
 import { Population } from './Population';
 
-const totalCities: number = 10;
+const totalCities: number = 7;
 const fleetSize: number = 2;
-const populationSize: number = 1500;
+const populationSize: number = 501;
 const mutationRate = 0.2;
 const canvasDimention = 600; // pixels
-const maxGenerations = 500;
+const maxGenerations = 250;
 
 // Generate initial population
 const population = new Population(totalCities, fleetSize, mutationRate, populationSize, canvasDimention);
@@ -108,7 +108,7 @@ function runGA() {
 
     drawMember(bestEverMember);
     drawCityNumbers();
-    console.log(bestEverMember.routes);
+    console.log(bestEverMember.routes.map((veh) => veh.route).join('\n'));
     writeToElem('bestDistance', bestDistance + '');
     writeToElem('generations', population.generations + '');
 

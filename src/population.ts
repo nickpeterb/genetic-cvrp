@@ -1,6 +1,7 @@
 import { Member } from './Member';
 import P5 from 'p5';
 import { TSPGraph } from './Graph';
+import { Vehicle } from './Vehicle';
 //import { annealTSP } from './anneal';
 
 export class Population {
@@ -12,9 +13,7 @@ export class Population {
     // just have this be what citiesGraph.xyLookup is
     cities: P5.Vector[] = [];
 
-    citiesGraph: TSPGraph = new TSPGraph([]);
-
-    //annealingSolution: number[] = [];
+    citiesGraph: TSPGraph;
 
     constructor(totalCities: number, fleetSize: number, mutationRate: number, populationSize: number, canvasDimention: number) {
         const p5 = P5.prototype;
@@ -56,8 +55,6 @@ export class Population {
         //if (this.matingPool.length === 0) console.error('Error Initializing Mating Pool');
         let newPopulation: Member[] = [];
         for (let i = 0; i < this.population.length; i++) {
-            //const newMember = this.selectMember(this.population);
-
             const parentA = this.selectMember(this.population);
             const parentB = this.selectMember(this.population);
             const newMember = this.crossover(parentA, parentB);
@@ -78,6 +75,7 @@ export class Population {
         let index = 0;
         let random = Math.random();
         while (random > 0) {
+            if (index === population.length) return population[index - 1];
             const probability = population[index].fitness;
             random -= probability;
             index++;
@@ -87,15 +85,24 @@ export class Population {
     }
 
     crossover(memberA: Member, memberB: Member) {
-        /*  const start = this.randomInt(0, memberA.genes.length);
-        const end = this.randomInt(start + 1, memberA.genes.length);
-        const newMemberRoute: string[] = memberA.genes.slice(start, end);
-        for (let i = 0; i < memberB.genes.length; i++) {
-            const cityIndex = memberB.genes[i];
+        const genesA = memberA.routes.map((vehicle) => vehicle.route).flat();
+        const genesB = memberB.routes.map((vehicle) => vehicle.route).flat();
+        const start = this.randomInt(0, genesA.length);
+        const end = this.randomInt(start + 1, genesA.length);
+        const newMemberRoute: string[] = genesA.slice(start, end);
+        for (let i = 0; i < genesB.length; i++) {
+            const cityIndex = genesB[i];
             if (!newMemberRoute.includes(cityIndex)) newMemberRoute.push(cityIndex);
         }
-        const newMember = new Member(this.cities.length, newMemberRoute); */
-        return memberA;
+        /*  for (let i = 0; i < memberA.routes.length; i++) {
+            const vehicle = new Vehicle()
+            for(const node of newMemberRoute)
+        } */
+        const newMember = new Member(this.cities.length, this.fleetSize);
+
+        newMember.routes = newMember.splitRoute(newMemberRoute, Math.ceil(this.cities.length / this.fleetSize));
+        //const newMember = new Member(this.cities.length, this.fleetSize, vehicles);
+        return newMember;
     }
 
     randomInt(min, max) {
