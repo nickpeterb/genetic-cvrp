@@ -17,6 +17,9 @@ export class TSPGraph {
                     const sisterCity = cities[sisterIndex];
                     const sisterHexId = sisterIndex.toString(16);
                     this.graph[cityHexId][sisterHexId] = Math.round(this.calcDistance(city.x, city.y, sisterCity.x, sisterCity.y));
+                } else {
+                    const sisterHexId = sisterIndex.toString(16);
+                    this.graph[cityHexId][sisterHexId] = 0;
                 }
             }
         }

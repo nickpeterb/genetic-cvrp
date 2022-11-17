@@ -1,39 +1,33 @@
 import P5 from 'p5';
 import { Member } from './Member';
 import { Population } from './Population';
-import { calcTotalDistance, annealTSP } from './anneal';
-import { bruteForceTSP } from './brute';
-import { testGA, testInputs } from './test';
+
+/*
+Mutation is currently high because there is no crossover happening, 
+so all genetic varation is coming from mutation. Should be decreased
+once crossover is fixed.
+*/
 
 const totalCities: number = 8;
-const populationSize: number = 1500;
-const mutationRate = 0.09;
+const populationSize: number = 1000;
+const mutationRate = 0.9;
 const canvasDimention = 600; // pixels
-const maxGenerations = 250;
-
-// https://p5js.org/reference/#/p5/mouseX
-// https://p5js.org/reference/#/p5.Element/mouseClicked for inputting cities
+const maxGenerations = 500;
+const fleetSize = 2;
+const chunkSize = Math.round(totalCities / fleetSize);
 
 // Generate initial population
-const population = new Population(totalCities, mutationRate, populationSize, canvasDimention);
+const population = new Population(totalCities, chunkSize, mutationRate, populationSize, canvasDimention);
 
-// Brute force implementation for comparison
-const bruteForceSolution = bruteForceTSP(population.cities);
-writeToElem('bruteBest', bruteForceSolution + 'px');
-
-const start = new Date();
-
-// Simulated annealing solution for comparison
-//const annealingSolution = annealTSP(population.cities);
+//const start = new Date();
 
 // Initial generation
 population.getAllFitnessValues();
-//population.normalizeFitnessValues();
 
 let bestDistance = Number.MAX_SAFE_INTEGER;
 let bestFitness = 0;
 
-let bestEverMember: Member = new Member(totalCities);
+let bestEverMember: Member = new Member(totalCities, chunkSize);
 
 // Creating the sketch itself
 const sketchSetup = (p5: P5) => {
@@ -46,40 +40,26 @@ const sketchSetup = (p5: P5) => {
         canvas.parent('app');
 
         // Configuring the canvas
-        p5.background('white');
+        p5.background('#242728');
         p5.textFont('Arial');
         p5.textSize(16);
-        p5.textStyle();
-        //p5.frameRate(2);
+        //p5.textStyle();
+        p5.frameRate(200);
         p5.noLoop();
-    };
-
-    const drawMember = (member: Member) => {
-        p5.background(0);
-        const routeCities = member.genes.map((hexId) => population.citiesGraph.xyLookup[hexId]);
-        // Draw route line
-        p5.fill(0, 0, 0, 0);
-        p5.strokeWeight(2);
-        p5.beginShape();
-        for (const city of routeCities) {
-            p5.vertex(city.x, city.y);
-        }
-        p5.endShape();
-        drawCityNumbers();
     };
 
     const drawCityNumbers = () => {
         // Draw city dots
-        p5.fill('white');
-        p5.stroke('white');
+        sketch.fill('white');
+        sketch.stroke('white');
         for (let i = 0; i < population.cities.length; i++) {
             const city = population.cities[i];
-            p5.ellipse(city.x, city.y, 30, 30);
+            sketch.ellipse(city.x, city.y, 30, 30);
         }
 
         // Draw city order numbers
-        p5.fill('green');
-        p5.stroke('green');
+        sketch.fill('green');
+        sketch.stroke('green');
         /* for (let i = 0; i < member.genes.length; i++) {
             const index = member.genes[i];
             const city = population.cities[index];
@@ -88,20 +68,31 @@ const sketchSetup = (p5: P5) => {
         for (let i = 0; i < population.cities.length; i++) {
             const city = population.cities[i];
             const cityHexId = i.toString(16);
-            p5.text(cityHexId, city.x - 5, city.y + 5);
+            sketch.text(cityHexId, city.x - 5, city.y + 5);
             /*  p5.fill('white');
             p5.text(`${city.x}, ${city.y}`, city.x - 5, city.y + 30); */
         }
     };
 
-    const drawLine = (member: Member) => {
-        p5.beginShape();
-        p5.fill(0, 0, 0, 0);
-        const routeCities = member.genes.map((hexId) => population.citiesGraph.xyLookup[hexId]);
+    const drawRoute = (route: string[], color: string) => {
+        sketch.beginShape();
+        sketch.fill(0, 0, 0, 0);
+        sketch.stroke(color);
+        const routeCities = route.map((hexId) => population.citiesGraph.xyLookup[hexId]);
         for (const city of routeCities) {
-            p5.vertex(city.x, city.y);
+            sketch.vertex(city.x, city.y);
         }
-        p5.endShape();
+        sketch.endShape();
+    };
+
+    const drawMember = (member: Member) => {
+        const colors = ['red', 'green', 'blue', 'purple', 'yellow'];
+        const vehicleRoutes = member.parseGenes();
+        for (let i = 0; i < vehicleRoutes.length; i++) {
+            const vehicleRoute = vehicleRoutes[i];
+            const color = colors[i];
+            drawRoute(vehicleRoute, color);
+        }
     };
 
     // The sketch draw method
@@ -114,35 +105,29 @@ const sketchSetup = (p5: P5) => {
         const bestMemberOfGeneration = population.getMostFitMember();
         if (bestMemberOfGeneration.distance < bestDistance) {
             bestDistance = bestMemberOfGeneration.distance;
+            bestEverMember = bestMemberOfGeneration;
         }
         if (bestMemberOfGeneration.fitness > bestFitness) {
             bestFitness = bestMemberOfGeneration.fitness;
-            bestEverMember = bestMemberOfGeneration;
         }
 
-        writeToElem('bestDistance', bestMemberOfGeneration.distance + '');
+        writeToElem('bestDistance', bestDistance + '');
         writeToElem('generations', population.generations + '');
 
-        p5.stroke(255);
+        p5.background('#242728');
         drawMember(bestMemberOfGeneration);
+        drawCityNumbers();
 
-        //console.log('Best Distance, Fitness', bestDistance, bestFitness);
-        if (population.generations === maxGenerations) {
-            const end = new Date();
+        if (population.generations >= maxGenerations) {
+            /* const end = new Date();
             const elapsed = end.getTime() - start.getTime();
-            console.log('seconds elapsed', elapsed / 1000);
+            console.log('seconds elapsed', elapsed / 1000); */
 
-            p5.stroke('green');
+            p5.background('#242728');
             drawMember(bestEverMember);
-            console.log('genetic best route', bestEverMember.genes);
-            //calcTotalDistance(bestEverMember.genes, population.cities);
-            console.log('genetic algorithm best', bestEverMember.distance);
-
-            /* if (bruteForceSolution) {
-                p5.stroke('red');
-                drawLine(bruteForceSolution);
-            } 
-            drawCityNumbers(); */
+            drawCityNumbers();
+            console.log('genetic best route', bestEverMember.parseGenes());
+            console.log('genetic best distance', bestEverMember.distance);
 
             p5.noLoop();
 
