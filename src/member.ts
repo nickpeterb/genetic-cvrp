@@ -56,18 +56,58 @@ export class Member {
 
     /** Based on a mutation probability, mutate a part of current DNA */
     mutate(mutationRate: number): void {
-        if (Math.random() < mutationRate) {
+        // Swap two adjacent points
+        /*  if (Math.random() < mutationRate) {
             const indexA = Math.floor(Math.random() * this.genes.length);
-            const indexB = Math.floor(Math.random() * this.genes.length);
-            //let indexB = indexA + 1;
-            //if (indexB >= this.genes.length) indexB = indexA - 1;
+            let indexB = indexA + 1;
+            if (indexB >= this.genes.length) indexB = indexA - 1;
+            this.swapGenes(indexA, indexB);
+        } */
+
+        // Swap two random points (Swap mutation)
+        if (Math.random() < mutationRate) {
+            const [indexA, indexB] = this.getRandomIndexes(this.genes.length);
             this.swapGenes(indexA, indexB);
         }
+
+        // Reverse a random subsection of the route (Inversion mutation)
+        if (Math.random() < mutationRate) {
+            const [indexA, indexB] = this.getRandomIndexes(this.genes.length);
+            const start = Math.min(indexA, indexB);
+            const end = Math.max(indexA, indexB);
+            this.genes = this.reverseSection(this.genes, start, end);
+        }
+    }
+
+    /* Utils */
+
+    getRandomIndexes(max: number): [number, number] {
+        const indexA = Math.floor(Math.random() * max);
+        let indexB = Math.floor(Math.random() * max);
+        if (indexA === indexB) indexB >= max - 1 ? indexB-- : indexB++;
+        return [indexA, indexB];
     }
 
     swapGenes(a: number, b: number): void {
         var temp = this.genes[b];
         this.genes[b] = this.genes[a];
         this.genes[a] = temp;
+    }
+
+    /**
+     * Reverse a section of an array and return the result
+     * @param array initial array
+     * @param start starting index (inclusive)
+     * @param end ending index (inclusive)
+     */
+    reverseSection(array: string[], start: number, end: number) {
+        const result: string[] = [];
+        const slice = array.slice(start, end + 1);
+        slice.reverse();
+        for (let i = 0; i < array.length; i++) {
+            if (i < start || i > end) result.push(array[i]);
+            else result.push(slice[i - start]);
+        }
+        return result;
     }
 }
