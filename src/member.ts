@@ -12,7 +12,7 @@ export class Member {
         this.chunkSize = chunkSize;
         if (genes !== undefined) this.genes = genes;
         else {
-            // create array of random indexes with length totalCities, ranging from 0 to totalCities - 1
+            // create array of random indexes with length totalCities, with values between 0 and totalCities - 1 (incl.)
             const indexes = Array.from(Array(totalCities).keys());
             indexes.shift(); // Remove 0, i.e the depot node
             const nodes: string[] = indexes.map((index) => index.toString(16));

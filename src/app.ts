@@ -8,13 +8,13 @@ so all genetic varation is coming from mutation. Should be decreased
 once crossover is fixed.
 */
 
-const totalCities: number = 10;
-const populationSize: number = 1500;
-const mutationRate = 0.9;
+const totalCities: number = 11; // including depot node
+const populationSize: number = 2;
+const mutationRate = 0.5;
 const canvasDimention = 600; // pixels
 const maxGenerations = 200;
 const fleetSize = 2;
-const chunkSize = Math.round(totalCities / fleetSize);
+const chunkSize = Math.round((totalCities - 1) / fleetSize); // minus one since depot node is not counted
 
 // Generate initial population
 const population = new Population(totalCities, chunkSize, mutationRate, populationSize, canvasDimention);
@@ -35,9 +35,7 @@ const sketchSetup = (p5: P5) => {
     // The sketch setup method
     p5.setup = () => {
         // Creating and positioning the canvas
-        const canvasHeight = canvasDimention;
-        const canvasWidth = canvasDimention;
-        const canvas = p5.createCanvas(canvasWidth, canvasHeight);
+        const canvas = p5.createCanvas(canvasDimention, canvasDimention);
         canvas.parent('app');
 
         // Configuring the canvas

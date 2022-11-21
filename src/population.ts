@@ -20,7 +20,9 @@ export class Population {
         this.chunkSize = chunkSize;
         const p5 = P5.prototype;
         // Create coordiantes for each city
-        for (let i = 0; i < totalCities; i++) {
+        const depotCenter = p5.createVector(canvasDimention / 2, canvasDimention / 2);
+        this.cities.push(depotCenter);
+        for (let i = 1; i < totalCities; i++) {
             // Give it some padding
             let x = Math.floor(Math.random() * (canvasDimention - 20));
             let y = Math.floor(Math.random() * (canvasDimention - 20));
@@ -43,7 +45,7 @@ export class Population {
     getAllFitnessValues(): void {
         let totalFitness = 0;
         for (let i = 0; i < this.population.length; i++) {
-            totalFitness += this.population[i].calcFitness(this.citiesGraph?.graph);
+            totalFitness += this.population[i].calcFitness(this.citiesGraph.graph);
         }
         for (let i = 0; i < this.population.length; i++) {
             this.population[i].fitness = this.population[i].fitness / totalFitness;
