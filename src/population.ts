@@ -64,7 +64,6 @@ export class Population {
             newPopulation.push(newMember);
         }
         this.population = [...newPopulation];
-        //console.log('newGeneration', this.population);
         this.generations += 1;
     }
 
@@ -86,7 +85,12 @@ export class Population {
     }
 
     crossover(memberA: Member, memberB: Member) {
-        return Math.random() < 0.5 ? memberA : memberB;
+        //return Math.random() < 0.5 ? memberA : memberB;
+        if (Math.random() < 0.5) {
+            return new Member(this.cities.length, this.chunkSize, memberA.genes);
+        } else {
+            return new Member(this.cities.length, this.chunkSize, memberB.genes);
+        }
         /* const start = this.randomInt(0, memberA.genes.length);
         const end = this.randomInt(start + 1, memberA.genes.length);
         const newMemberRoute: string[] = memberA.genes.slice(start, end);
@@ -109,6 +113,6 @@ export class Population {
         for (const member of this.population) {
             if (member.fitness > mostFitMember.fitness) mostFitMember = member;
         }
-        return mostFitMember;
+        return Object.assign(Object.create(Object.getPrototypeOf(mostFitMember)), mostFitMember);
     }
 }

@@ -8,11 +8,11 @@ so all genetic varation is coming from mutation. Should be decreased
 once crossover is fixed.
 */
 
-const totalCities: number = 8;
-const populationSize: number = 1000;
+const totalCities: number = 10;
+const populationSize: number = 1500;
 const mutationRate = 0.9;
 const canvasDimention = 600; // pixels
-const maxGenerations = 500;
+const maxGenerations = 200;
 const fleetSize = 2;
 const chunkSize = Math.round(totalCities / fleetSize);
 
@@ -25,9 +25,10 @@ const population = new Population(totalCities, chunkSize, mutationRate, populati
 population.getAllFitnessValues();
 
 let bestDistance = Number.MAX_SAFE_INTEGER;
+let bestRoute: string[][] = [];
 let bestFitness = 0;
 
-let bestEverMember: Member = new Member(totalCities, chunkSize);
+//let bestEverMember: Member = new Member(totalCities, chunkSize);
 
 // Creating the sketch itself
 const sketchSetup = (p5: P5) => {
@@ -93,6 +94,7 @@ const sketchSetup = (p5: P5) => {
             const color = colors[i];
             drawRoute(vehicleRoute, color);
         }
+        sketch.text(member.distance, 20, 20);
     };
 
     // The sketch draw method
@@ -105,7 +107,8 @@ const sketchSetup = (p5: P5) => {
         const bestMemberOfGeneration = population.getMostFitMember();
         if (bestMemberOfGeneration.distance < bestDistance) {
             bestDistance = bestMemberOfGeneration.distance;
-            bestEverMember = bestMemberOfGeneration;
+            bestRoute = bestMemberOfGeneration.parseGenes();
+            //bestEverMember = bestMemberOfGeneration;
         }
         if (bestMemberOfGeneration.fitness > bestFitness) {
             bestFitness = bestMemberOfGeneration.fitness;
@@ -123,16 +126,28 @@ const sketchSetup = (p5: P5) => {
             const elapsed = end.getTime() - start.getTime();
             console.log('seconds elapsed', elapsed / 1000); */
 
-            p5.background('#242728');
+            /* p5.background('#242728');
             drawMember(bestEverMember);
+            drawCityNumbers(); 
+            console.log('bestEverMember route', bestEverMember.parseGenes());
+            console.log('bestEverMember distance', bestEverMember.distance);
+            writeToElem('bestDistance', bestEverMember.distance + '');
+            writeToElem('bestFitness', bestEverMember.fitness + '');*/
+
+            const finalMember = new Member(
+                totalCities,
+                chunkSize,
+                bestRoute.flat().filter((c) => c !== '0')
+            );
+            finalMember.calcFitness(population.citiesGraph.graph);
+            p5.background('#242728');
+            drawMember(finalMember);
             drawCityNumbers();
-            console.log('genetic best route', bestEverMember.parseGenes());
-            console.log('genetic best distance', bestEverMember.distance);
+            console.log('bestRoute', bestRoute);
+            console.log('bestDistance', bestDistance);
+            writeToElem('bestDistance', finalMember.distance + '');
 
             p5.noLoop();
-
-            writeToElem('bestDistance', bestEverMember.distance + '');
-            writeToElem('bestFitness', bestEverMember.fitness + '');
         }
     };
 };

@@ -49,8 +49,8 @@ export class Member {
             const nextCity = genes[i + 1];
             distance += citiesGraph[city][nextCity];
         }
-        this.distance = Math.round(distance);
-        this.fitness = 1 / (this.distance + 1);
+        this.distance = distance;
+        this.fitness = 1 / (distance + 1);
         return this.fitness;
     }
 
@@ -58,9 +58,9 @@ export class Member {
     mutate(mutationRate: number): void {
         if (Math.random() < mutationRate) {
             const indexA = Math.floor(Math.random() * this.genes.length);
-            //const indexB = Math.floor(Math.random() * this.genes.length);
-            let indexB = indexA + 1;
-            if (indexB >= this.genes.length) indexB = indexA - 1;
+            const indexB = Math.floor(Math.random() * this.genes.length);
+            //let indexB = indexA + 1;
+            //if (indexB >= this.genes.length) indexB = indexA - 1;
             this.swapGenes(indexA, indexB);
         }
     }

@@ -13,13 +13,11 @@ export class TSPGraph {
             this.graph[cityHexId] = {};
 
             for (let sisterIndex = 0; sisterIndex < cities.length; sisterIndex++) {
-                if (sisterIndex !== cityIndex) {
+                if (sisterIndex === cityIndex) this.graph[cityHexId][cityHexId] = 0;
+                else {
                     const sisterCity = cities[sisterIndex];
                     const sisterHexId = sisterIndex.toString(16);
                     this.graph[cityHexId][sisterHexId] = Math.round(this.calcDistance(city.x, city.y, sisterCity.x, sisterCity.y));
-                } else {
-                    const sisterHexId = sisterIndex.toString(16);
-                    this.graph[cityHexId][sisterHexId] = 0;
                 }
             }
         }
