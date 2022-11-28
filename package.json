@@ -19,5 +19,14 @@
     "dependencies": {
         "p5": "^1.4.2",
         "salesman.js": "^2.0.4"
+    },
+    "staticFiles": {
+        "staticPath": [
+            {
+                "staticPath": "datasets",
+                "staticOutDir": "datasets"
+            }
+        ],
+        "watcherGlob": "**/*.txt"
     }
 }

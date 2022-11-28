@@ -1,66 +1,76 @@
 import { Member } from './Member';
-import P5 from 'p5';
-import { TSPGraph } from './Graph';
-//import { annealTSP } from './anneal';
+import { VRPGraph } from './Graph';
+
+export interface City {
+    x: number;
+    y: number;
+    demand: number;
+}
 
 export class Population {
-    mutationRate: number; // Mutation rate
+    // GA Settings
     population: Member[] = []; // Array to hold the current population
+    mutationRate: number; // Mutation rate
+    tournamentSize: number;
     generations: number = 0; // Number of generations
-    chunkSize: number;
 
-    // just have this be what citiesGraph.xyLookup is
-    cities: P5.Vector[] = [];
+    // VRP Settings
+    fleetSize: number;
+    vehicleCapacity: number;
 
-    citiesGraph: TSPGraph = new TSPGraph([]);
+    cities: City[];
+    citiesGraph: VRPGraph;
 
-    //annealingSolution: number[] = [];
+    constructor(
+        cities: City[],
+        populationSize: number,
+        mutationRate: number,
+        tournamentSize: number,
+        fleetSize: number,
+        vehicleCapacity: number
+    ) {
+        for (let i = 0; i < populationSize; i++) {
+            const randomSolution = Member.generateRandomSolution(cities.length);
+            this.population.push(new Member(randomSolution, vehicleCapacity, fleetSize));
+        }
+        this.cities = cities;
+        this.mutationRate = mutationRate;
+        this.tournamentSize = tournamentSize;
+        this.fleetSize = fleetSize;
+        this.citiesGraph = new VRPGraph(this.cities);
+        this.vehicleCapacity = vehicleCapacity;
+    }
 
-    constructor(totalCities: number, chunkSize: number, mutationRate: number, populationSize: number, canvasDimention: number) {
-        this.chunkSize = chunkSize;
-        const p5 = P5.prototype;
-        // Create coordiantes for each city
-        const depotCenter = p5.createVector(canvasDimention / 2, canvasDimention / 2);
-        this.cities.push(depotCenter);
+    static generateRandomCities(totalCities: number, canvasDimention: number) {
+        const cities: City[] = [];
+        const depotCenter: City = { x: canvasDimention / 2, y: canvasDimention / 2, demand: 0 };
+        cities.push(depotCenter);
         for (let i = 1; i < totalCities; i++) {
             // Give it some padding
             let x = Math.floor(Math.random() * (canvasDimention - 20));
             let y = Math.floor(Math.random() * (canvasDimention - 20));
             x += 10;
             y += 10;
-            const v = p5.createVector(x, y);
-            this.cities.push(v);
+            const v = { x, y, demand: i };
+            cities.push(v);
         }
-
-        let initialPopulation: Member[] = [];
-        for (let i = 0; i < populationSize; i++) initialPopulation.push(new Member(totalCities, chunkSize));
-
-        this.population = [...initialPopulation];
-
-        this.mutationRate = mutationRate;
-        this.citiesGraph = new TSPGraph(this.cities);
+        return cities;
     }
 
     /** Set the fitness value for every member of the population */
-    getAllFitnessValues(): void {
-        let totalFitness = 0;
+    calcAllFitnessValues(): void {
         for (let i = 0; i < this.population.length; i++) {
-            totalFitness += this.population[i].calcFitness(this.citiesGraph.graph);
-        }
-        for (let i = 0; i < this.population.length; i++) {
-            this.population[i].fitness = this.population[i].fitness / totalFitness;
+            this.population[i].calcSolutionFitness(this.citiesGraph);
         }
     }
 
     /** Create a new generation */
     newGeneration(): void {
         if (this.population.length === 0) console.error('Error Initializing Population');
-        //if (this.matingPool.length === 0) console.error('Error Initializing Mating Pool');
         let newPopulation: Member[] = [];
         for (let i = 0; i < this.population.length; i++) {
-            //const newMember = this.selectMember(this.population);
-            const parentA = this.selectMember(this.population);
-            const parentB = this.selectMember(this.population);
+            const parentA = this.tournamentSelection();
+            const parentB = this.tournamentSelection();
             const newMember = this.crossover(parentA, parentB);
             newMember.mutate(this.mutationRate);
             newPopulation.push(newMember);
@@ -69,52 +79,32 @@ export class Population {
         this.generations += 1;
     }
 
-    /**
-     * Picks a member of the popultion based on its normalized fitness (i.e the its probability)
-     * @param population the current population with normalized values
-     * @returns a member of the population
-     */
-    selectMember(population: Member[]): Member {
-        let index = 0;
-        let random = Math.random();
-        while (random > 0) {
-            const probability = population[index].fitness;
-            random -= probability;
-            index++;
+    tournamentSelection() {
+        const randomIndexes: number[] = [];
+        for (let i = 0; i < this.tournamentSize; i++) {
+            let random = Math.floor(Math.random() * this.population.length);
+            while (randomIndexes.includes(random)) random = Math.floor(Math.random() * this.population.length);
+            randomIndexes.push(random);
         }
-        index--;
-        return population[index];
+        const pickedMembers = this.population.filter((_, i) => randomIndexes.includes(i));
+        pickedMembers.sort((memberA, memberB) => memberA.fitness - memberB.fitness);
+        return pickedMembers[0]; // Winner
     }
 
-    crossover(memberA: Member, memberB: Member) {
-        //return Math.random() < 0.5 ? memberA : memberB;
-        if (Math.random() < 0.5) {
-            return new Member(this.cities.length, this.chunkSize, memberA.genes);
-        } else {
-            return new Member(this.cities.length, this.chunkSize, memberB.genes);
+    crossover(parentA: Member, parentB: Member) {
+        const parentARoute = parentA.solution.split(',');
+        const parentBRoute = parentB.solution.split(',');
+        const point = Math.floor(Math.random() * parentARoute.length);
+        const child = parentARoute.slice(0, point);
+        for (let i = 0; i < parentBRoute.length; i++) {
+            const city = parentBRoute[i];
+            if (!child.includes(city)) child.push(city);
         }
-        /* const start = this.randomInt(0, memberA.genes.length);
-        const end = this.randomInt(start + 1, memberA.genes.length);
-        const newMemberRoute: string[] = memberA.genes.slice(start, end);
-        for (let i = 0; i < memberB.genes.length; i++) {
-            const cityIndex = memberB.genes[i];
-            if (!newMemberRoute.includes(cityIndex)) newMemberRoute.push(cityIndex);
-        }
-        const newMember = new Member(this.cities.length, this.chunkSize, newMemberRoute);
-        return newMember; */
+        return new Member(child.join(','), this.vehicleCapacity, this.fleetSize);
     }
 
-    randomInt(min, max) {
-        min = Math.ceil(min);
-        max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
-    }
-
-    getMostFitMember(): Member {
-        let mostFitMember = this.population[0];
-        for (const member of this.population) {
-            if (member.fitness > mostFitMember.fitness) mostFitMember = member;
-        }
-        return Object.assign(Object.create(Object.getPrototypeOf(mostFitMember)), mostFitMember);
+    getBestMemberOfGeneration(): Member {
+        const sorted = [...this.population].sort((memberA, memberB) => memberA.fitness - memberB.fitness);
+        return sorted[0];
     }
 }

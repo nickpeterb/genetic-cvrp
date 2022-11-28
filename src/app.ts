@@ -1,34 +1,53 @@
 import P5 from 'p5';
 import { Member } from './Member';
-import { Population } from './Population';
+import { City, Population } from './Population';
+//import { readFile } from './datasets';
 
-/*
-Mutation is currently high because there is no crossover happening, 
-so all genetic varation is coming from mutation. Should be decreased
-once crossover is fixed.
-*/
+const backgroundColor = '#242728';
 
-const totalCities: number = 11; // including depot node
-const populationSize: number = 2;
-const mutationRate = 0.5;
+// VRP Settings
+let totalCities: number = 31; // including depot node
+let fleetSize = 5;
+let vehicleCapacity = 155;
 const canvasDimention = 600; // pixels
-const maxGenerations = 200;
-const fleetSize = 2;
-const chunkSize = Math.round((totalCities - 1) / fleetSize); // minus one since depot node is not counted
 
-// Generate initial population
-const population = new Population(totalCities, chunkSize, mutationRate, populationSize, canvasDimention);
+// GA Settings
+const populationSize: number = 500;
+const mutationRate = 0.4;
+const maxGenerations = 500;
+const tournamentSize = 2;
 
-//const start = new Date();
+let bestMember: Member = new Member('', 0, 0);
+bestMember.fitness = Number.MAX_SAFE_INTEGER;
 
-// Initial generation
-population.getAllFitnessValues();
+let yMax = canvasDimention;
+const yOffset = 20;
+const xOffset = 20;
+const scaleFactor = 4.5;
+function translatePoint(point: City): City {
+    return point;
+    // const x = point.x * scaleFactor + xOffset;
+    // const y = (Math.abs(point.y - yMax) + yOffset) * scaleFactor;
+    // return { x, y, demand: point.demand };
+}
 
-let bestDistance = Number.MAX_SAFE_INTEGER;
-let bestRoute: string[][] = [];
-let bestFitness = 0;
+/* readFile().then((dataset) => {
+    console.log(dataset);
+    loadCitiesFromDataset(dataset);
 
-//let bestEverMember: Member = new Member(totalCities, chunkSize);
+    writeToElem('optimalDistance', dataset.cost + '');
+    totalCities = dataset.cities.length;
+    fleetSize = dataset.fleetSize;
+
+    yMax = Math.max(...dataset.cities.map((c) => c.y));
+
+    generateInitialPopulation(totalCities, populationSize);
+    calcAllFitnessValues(fleetSize);
+}); */
+
+const randomCities = Population.generateRandomCities(totalCities, canvasDimention);
+const population = new Population(randomCities, populationSize, mutationRate, tournamentSize, fleetSize, vehicleCapacity);
+population.calcAllFitnessValues();
 
 // Creating the sketch itself
 const sketchSetup = (p5: P5) => {
@@ -39,37 +58,30 @@ const sketchSetup = (p5: P5) => {
         canvas.parent('app');
 
         // Configuring the canvas
-        p5.background('#242728');
+        p5.background(backgroundColor);
         p5.textFont('Arial');
         p5.textSize(16);
         //p5.textStyle();
-        p5.frameRate(200);
+        //p5.frameRate(200);
         p5.noLoop();
     };
 
-    const drawCityNumbers = () => {
+    const drawCityNumbers = (cities: City[]) => {
         // Draw city dots
+        /* sketch.fill('white');
+        sketch.stroke('white');
+        for (let i = 0; i < cities.length; i++) {
+            const city = translatePoint(cities[i]);
+            sketch.ellipse(city.x, city.y, 10, 10);
+        } */
+
+        //Draw city order numbers
         sketch.fill('white');
         sketch.stroke('white');
-        for (let i = 0; i < population.cities.length; i++) {
-            const city = population.cities[i];
-            sketch.ellipse(city.x, city.y, 30, 30);
-        }
-
-        // Draw city order numbers
-        sketch.fill('green');
-        sketch.stroke('green');
-        /* for (let i = 0; i < member.genes.length; i++) {
-            const index = member.genes[i];
-            const city = population.cities[index];
-            p5.text(i, city.x - 5, city.y + 5);
-        } */
-        for (let i = 0; i < population.cities.length; i++) {
-            const city = population.cities[i];
-            const cityHexId = i.toString(16);
-            sketch.text(cityHexId, city.x - 5, city.y + 5);
-            /*  p5.fill('white');
-            p5.text(`${city.x}, ${city.y}`, city.x - 5, city.y + 30); */
+        for (let i = 0; i < cities.length; i++) {
+            const city = translatePoint(cities[i]);
+            const cityHexId = i.toString();
+            sketch.text(cityHexId, city.x, city.y);
         }
     };
 
@@ -77,73 +89,59 @@ const sketchSetup = (p5: P5) => {
         sketch.beginShape();
         sketch.fill(0, 0, 0, 0);
         sketch.stroke(color);
-        const routeCities = route.map((hexId) => population.citiesGraph.xyLookup[hexId]);
+        const routeCities = route.map((id) => population.citiesGraph.lookup[parseInt(id)]);
         for (const city of routeCities) {
-            sketch.vertex(city.x, city.y);
+            const c = translatePoint(city);
+            sketch.vertex(c.x, c.y);
         }
         sketch.endShape();
     };
 
-    const drawMember = (member: Member) => {
-        const colors = ['red', 'green', 'blue', 'purple', 'yellow'];
-        const vehicleRoutes = member.parseGenes();
+    const drawSolution = (member: Member) => {
+        const colors = ['red', 'green', 'dodgerblue', 'purple', 'yellow', 'orange'];
+        const vehicleRoutes = member.parseSolution();
         for (let i = 0; i < vehicleRoutes.length; i++) {
             const vehicleRoute = vehicleRoutes[i];
             const color = colors[i];
             drawRoute(vehicleRoute, color);
         }
-        sketch.text(member.distance, 20, 20);
     };
 
     // The sketch draw method
     p5.draw = () => {
+        /* p5.translate(0, canvasDimention);
+        p5.scale(1, -1); */
+
+        if (!p5.isLooping()) {
+            drawCityNumbers(population.cities);
+            return;
+        }
+
         population.newGeneration();
-        population.getAllFitnessValues();
-        //population.normalizeFitnessValues();
+        population.calcAllFitnessValues();
+        const bestMemberOfGeneration = population.getBestMemberOfGeneration();
 
-        // Get most fit member & check if finished
-        const bestMemberOfGeneration = population.getMostFitMember();
-        if (bestMemberOfGeneration.distance < bestDistance) {
-            bestDistance = bestMemberOfGeneration.distance;
-            bestRoute = bestMemberOfGeneration.parseGenes();
-            //bestEverMember = bestMemberOfGeneration;
-        }
-        if (bestMemberOfGeneration.fitness > bestFitness) {
-            bestFitness = bestMemberOfGeneration.fitness;
-        }
+        if (bestMemberOfGeneration.fitness < bestMember.fitness) bestMember = bestMemberOfGeneration;
 
-        writeToElem('bestDistance', bestDistance + '');
+        writeToElem('currDistance', bestMemberOfGeneration.distance + '');
+        writeToElem('bestDistance', bestMember.distance + '');
+        writeToElem('bestFitness', bestMember.fitness + '');
         writeToElem('generations', population.generations + '');
 
-        p5.background('#242728');
-        drawMember(bestMemberOfGeneration);
-        drawCityNumbers();
+        p5.background(backgroundColor);
+        drawSolution(bestMemberOfGeneration);
+        drawCityNumbers(population.cities);
 
         if (population.generations >= maxGenerations) {
-            /* const end = new Date();
-            const elapsed = end.getTime() - start.getTime();
-            console.log('seconds elapsed', elapsed / 1000); */
+            p5.background(backgroundColor);
 
-            /* p5.background('#242728');
-            drawMember(bestEverMember);
-            drawCityNumbers(); 
-            console.log('bestEverMember route', bestEverMember.parseGenes());
-            console.log('bestEverMember distance', bestEverMember.distance);
-            writeToElem('bestDistance', bestEverMember.distance + '');
-            writeToElem('bestFitness', bestEverMember.fitness + '');*/
+            drawSolution(bestMember);
+            drawCityNumbers(population.cities);
 
-            const finalMember = new Member(
-                totalCities,
-                chunkSize,
-                bestRoute.flat().filter((c) => c !== '0')
-            );
-            finalMember.calcFitness(population.citiesGraph.graph);
-            p5.background('#242728');
-            drawMember(finalMember);
-            drawCityNumbers();
-            console.log('bestRoute', bestRoute);
-            console.log('bestDistance', bestDistance);
-            writeToElem('bestDistance', finalMember.distance + '');
+            console.log('bestRoute', bestMember.solution);
+            writeToElem('currDistance', bestMember.distance + '');
+            writeToElem('bestDistance', bestMember.distance + '');
+            writeToElem('bestFitness', bestMember.fitness + '');
 
             p5.noLoop();
         }
@@ -160,5 +158,3 @@ const sketch = new P5(sketchSetup);
 (window as any).run = function () {
     sketch.loop();
 };
-
-//testInputs();

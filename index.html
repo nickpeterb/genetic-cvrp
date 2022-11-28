@@ -7,11 +7,14 @@
     </head>
     <body>
         <div class="container">
-            <h1>One Vehicle, Shortest Distance</h1>
+            <h1>Multiple Vehicles, Shortest Distance</h1>
             <div id="app"></div>
             <button id="run-button" onclick="run()">Run GA</button>
-            <div>Shortest Total Distance: <span id="bestDistance"></span>px</div>
+            <div>Current Distance: <span id="currDistance"></span></div>
+            <div>Best Distance: <span id="bestDistance"></span></div>
+            <div>Best Fitness: <span id="bestFitness"></span></div>
             <div>Generations: <span id="generations"></span></div>
+            <div>Optimal Distance: <span id="optimalDistance"></span></div>
         </div>
         <script type="module" src="src/app.ts"></script>
     </body>
