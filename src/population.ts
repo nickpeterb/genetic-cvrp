@@ -71,7 +71,7 @@ export class Population {
         for (let i = 0; i < this.population.length; i++) {
             const parentA = this.tournamentSelection();
             const parentB = this.tournamentSelection();
-            const newMember = this.crossover(parentA, parentB);
+            const newMember = this.onePointcrossover(parentA, parentB);
             newMember.mutate(this.mutationRate);
             newPopulation.push(newMember);
         }
@@ -83,7 +83,9 @@ export class Population {
         const randomIndexes: number[] = [];
         for (let i = 0; i < this.tournamentSize; i++) {
             let random = Math.floor(Math.random() * this.population.length);
-            while (randomIndexes.includes(random)) random = Math.floor(Math.random() * this.population.length);
+            while (randomIndexes.includes(random)) {
+                random = Math.floor(Math.random() * this.population.length);
+            }
             randomIndexes.push(random);
         }
         const pickedMembers = this.population.filter((_, i) => randomIndexes.includes(i));
@@ -91,7 +93,7 @@ export class Population {
         return pickedMembers[0]; // Winner
     }
 
-    crossover(parentA: Member, parentB: Member) {
+    onePointcrossover(parentA: Member, parentB: Member): Member {
         const parentARoute = parentA.solution.split(',');
         const parentBRoute = parentB.solution.split(',');
         const point = Math.floor(Math.random() * parentARoute.length);

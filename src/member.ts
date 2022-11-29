@@ -31,7 +31,7 @@ export class Member {
      */
     parseSolution(): string[][] {
         const genes = this.solution.split(',');
-        const chunkSize = Math.round((genes.length + 1) / this.fleetSize);
+        const chunkSize = Math.ceil(genes.length / this.fleetSize);
         const depot = '0';
         const vehicleRoutes: string[][] = [];
         for (let i = 0; i < genes.length; i += chunkSize) {
@@ -46,19 +46,21 @@ export class Member {
         return vehicleRoutes;
     }
 
+    /**
+     * Calculate the fitness of the Member (lower is better)
+     * @param citiesGraph an instance of VRPGraph
+     */
     calcSolutionFitness(citiesGraph: VRPGraph) {
         // This will give higher (worse) fitness to bad routes, but not exclude them entirely
         const distance = this.calcSolutionDistance(citiesGraph.graph);
         const routes = this.parseSolution();
         let overloads = 0;
         for (const vehicle of routes) {
-            // right now demand is the index, but will make a demand array for lookup later
             const totalRouteDemand = vehicle.map((id) => citiesGraph.lookup[id].demand).reduce((prev, curr) => prev + curr, 0);
             if (totalRouteDemand > this.vehicleCapacity) overloads++;
         }
-        //return distance + Math.pow(1000, overloads);
         this.distance = distance;
-        this.fitness = distance + overloads * 5000; // Arbitrary multiplier
+        this.fitness = distance + overloads * 500; // Arbitrary multiplier
     }
 
     calcSolutionDistance(citiesGraph: Object) {
@@ -91,25 +93,16 @@ export class Member {
             return;
         }
 
-        if (Math.random() < mutationRate) {
-            const route = this.solution.split(',');
-            const indexA = Math.floor(Math.random() * route.length);
-            let indexB = indexA + 1;
-            if (indexB >= route.length) indexB = indexA - 1;
-            this.solution = swapGenes(route, indexA, indexB).join(',');
-            return;
-        }
-
         // Swap two random points (Swap mutation)
-        /* if (Math.random() < mutationRate) {
+        if (Math.random() < mutationRate) {
             const route = this.solution.split(',');
             const [indexA, indexB] = this.getRandomIndexes(route.length);
             const mutated = swapGenes(route, indexA, indexB);
             this.solution = mutated.join(',');
             return;
-        } */
+        }
 
-        /*const reverseSection = (array: string[], start: number, end: number) => {
+        const reverseSection = (array: string[], start: number, end: number) => {
             const result: string[] = [];
             const slice = array.slice(start, end + 1);
             slice.reverse();
@@ -121,7 +114,7 @@ export class Member {
         };
 
         // Reverse a random subsection of the route (Inversion mutation)
-         if (Math.random() < 0.01) {
+        if (Math.random() < 0.01) {
             const route = this.solution.split(',');
             const [indexA, indexB] = this.getRandomIndexes(route.length);
             const start = Math.min(indexA, indexB);
@@ -129,7 +122,7 @@ export class Member {
             const result = reverseSection(route, start, end);
             this.solution = result.join(',');
             return;
-        } */
+        }
     }
 
     /* Utils */
