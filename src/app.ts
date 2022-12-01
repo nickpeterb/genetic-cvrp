@@ -15,8 +15,6 @@ import * as p5Global from 'p5/global';
     textSize(16);
 
     frameRate(200);
-    // fill('white');
-    // text('BIG ANNOYING TEXT', 50, 50);
     noLoop();
 };
 
@@ -30,7 +28,7 @@ function drawPop(population: Population) {
 
     background(backgroundColor);
     drawSolution(bestMemberOfGeneration, population.citiesGraph.lookup);
-    drawCityNumbers(population.cities);
+    drawCities(population.cities);
 
     writeToElem('currDistance', bestMemberOfGeneration.distance + '');
     writeToElem('bestDistance', bestMember.distance + '');
@@ -40,7 +38,7 @@ function drawPop(population: Population) {
     if (population.generations >= maxGenerations) {
         background(backgroundColor);
         drawSolution(bestMember, population.citiesGraph.lookup);
-        drawCityNumbers(population.cities);
+        drawCities(population.cities);
 
         console.log('bestRoute', bestMember.solution);
         console.log(bestMember.parseSolution());
@@ -57,15 +55,13 @@ const yOffset = 20;
 const xOffset = 10;
 const scaleFactor = 4.5;
 
-//let isRandom = false;
-
 const translatePoint = (point: City): City => {
     const x = point.x * scaleFactor + xOffset;
     const y = Math.abs(point.y - yMax) * scaleFactor + yOffset;
     return { x, y, demand: point.demand };
 };
 
-const drawCityNumbers = (cities: City[]) => {
+const drawCities = (cities: City[]) => {
     // Draw city dots
     fill('white');
     stroke('white');
@@ -116,7 +112,7 @@ function selectDataset(datasetName) {
         yMax = Math.max(...dataset.cities.map((c) => c.y));
 
         const { cities } = dataset;
-        drawCityNumbers(cities);
+        drawCities(cities);
     });
 }
 
