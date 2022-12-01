@@ -122,8 +122,8 @@ let selectedDataset = 'none';
 const backgroundColor = '#242728';
 
 // VRP Settings
-let totalCities: number = 20; // including depot node
-let fleetSize = 2;
+let totalCities: number = 30; // including depot node
+let fleetSize = 5;
 let vehicleCapacity = (totalCities * (totalCities + 1)) / 2;
 
 // GA Settings
@@ -147,6 +147,8 @@ function reset() {
     writeToElem('bestFitness', '');
     writeToElem('generations', '');
     writeToElem('optimalDistance', '');
+    bestMember = new Member('', 0, 0);
+    bestMember.fitness = Number.MAX_SAFE_INTEGER;
 }
 
 window.onload = function () {
