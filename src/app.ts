@@ -1,18 +1,24 @@
 import P5 from 'p5';
 import { Member } from './Member';
 import { City, Population } from './Population';
-import { readFile, testReadFile } from './datasets';
+import { readFile } from './datasets';
+import { testDatasets, testGenerationsVsPopulationSize } from './test';
+import { datasetNames } from './datasetNames';
+
+// (window as any).run = function () {
+//     testDatasets();
+// };
 
 const backgroundColor = '#242728';
 
 // VRP Settings
-let totalCities: number = 31; // including depot node
-let fleetSize = 5;
+let totalCities: number = 10; // including depot node
+let fleetSize = 2;
 let vehicleCapacity = 155;
 const canvasDimention = 600; // pixels
 
 // GA Settings
-const populationSize: number = 1500;
+const populationSize: number = 5;
 const mutationRate = 0.3;
 const maxGenerations = 500;
 const tournamentSize = 2;
@@ -31,10 +37,11 @@ let translatePoint = (point: City): City => {
 
 let population = new Population([], 0, 0, 0, 0, 0);
 
-readFile().then((dataset) => {
+readFile(datasetNames[0]).then((dataset) => {
     console.log(dataset);
 
     writeToElem('optimalDistance', dataset.optimum + '');
+    writeToElem('datasetName', dataset.name + '');
 
     const { cities, fleetSize, capacity } = dataset;
     population = new Population(cities, populationSize, mutationRate, tournamentSize, fleetSize, capacity);
@@ -48,10 +55,9 @@ readFile().then((dataset) => {
     };
 });
 
-//const randomCities = Population.generateRandomCities(totalCities, canvasDimention);
-//population = new Population(randomCities, mutationRate, tournamentSize, fleetSize, vehicleCapacity);
-//population.generateInitialPopulation(populationSize);
-//population.calcAllFitnessValues();
+// const randomCities = Population.generateRandomCities(totalCities, canvasDimention);
+// population = new Population(randomCities, populationSize, mutationRate, tournamentSize, fleetSize, vehicleCapacity);
+// population.calcAllFitnessValues();
 
 // Creating the sketch itself
 const sketchSetup = (p5: P5) => {
@@ -102,7 +108,19 @@ const sketchSetup = (p5: P5) => {
     };
 
     const drawSolution = (member: Member) => {
-        const colors = ['red', 'green', 'dodgerblue', 'blueviolet', 'yellow', 'orange'];
+        const colors = [
+            'red',
+            'green',
+            'dodgerblue',
+            'blueviolet',
+            'yellow',
+            'orange',
+            'lightbrown',
+            'darkgrey',
+            'pink',
+            'magenta',
+            'white',
+        ];
         const vehicleRoutes = member.parseSolution();
         for (let i = 0; i < vehicleRoutes.length; i++) {
             const vehicleRoute = vehicleRoutes[i];
@@ -113,9 +131,6 @@ const sketchSetup = (p5: P5) => {
 
     // The sketch draw method
     p5.draw = () => {
-        /* p5.translate(0, canvasDimention);
-        p5.scale(1, -1); */
-
         if (!p5.isLooping()) {
             drawCityNumbers(population.cities);
             return;

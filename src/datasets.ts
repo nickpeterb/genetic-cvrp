@@ -1,3 +1,4 @@
+import { datasetNames } from './datasetNames';
 import { City } from './Population';
 
 export interface Dataset {
@@ -9,32 +10,17 @@ export interface Dataset {
     capacity: number;
 }
 
-const datasetNames = ['A-n32-k5', 'A-n33-k5', 'P-n20-k2'];
-
-export async function testReadFile(): Promise<any> {
-    const filename = datasetNames[1];
-    const localUrl = 'datasets/' + filename;
-    const solutionResp = await fetch(localUrl + '.sol.txt');
-    const solution = await solutionResp.text();
-
-    const [route, optimum, fleetSize] = readSolution(solution);
-    return fleetSize;
-}
-
-export async function readFile(): Promise<Dataset> {
-    console.log('getting files...');
-
-    const filename = datasetNames[0];
+export async function readFile(filename: string): Promise<Dataset> {
     const localUrl = 'datasets/' + filename;
 
-    const instanceResp = await fetch(localUrl + '.vrp.txt');
+    const instanceResp = await fetch(localUrl + '.vrp');
     const instance = await instanceResp.text();
 
     const name = readValue(instance, 'NAME');
     const capacity = parseInt(readValue(instance, 'CAPACITY'));
     const cities = readCoordinates(instance);
 
-    const solutionResp = await fetch(localUrl + '.sol.txt');
+    const solutionResp = await fetch(localUrl + '.sol');
     const solution = await solutionResp.text();
 
     const [route, optimum, fleetSize] = readSolution(solution);
