@@ -7,10 +7,19 @@
     </head>
     <body>
         <div class="container">
-            <h1>Multiple Vehicles, Shortest Distance</h1>
+            <h2>Genetic Algorithm CVRP</h2>
+
+            <div style="margin-bottom: 5px">
+                <select id="select-dataset" style="padding: 3px 5px">
+                    <option value="none">Select Dataset</option>
+                </select>
+                <button id="run-button" onclick="run()">Run Dataset</button>
+                /
+                <button id="rand-button" onclick="randomize()">Randomize</button>
+            </div>
+
             <div id="app"></div>
-            <button id="run-button" onclick="run()">Run GA</button>
-            <div>Dataset Name: <span id="datasetName"></span></div>
+
             <div>Current Distance: <span id="currDistance"></span></div>
             <div>Best Distance: <span id="bestDistance"></span></div>
             <div>Best Fitness: <span id="bestFitness"></span></div>

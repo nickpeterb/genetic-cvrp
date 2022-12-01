@@ -41,14 +41,15 @@ export class Population {
         this.vehicleCapacity = vehicleCapacity;
     }
 
-    static generateRandomCities(totalCities: number, canvasDimention: number) {
+    static generateRandomCities(totalCities: number) {
         const cities: City[] = [];
-        const depotCenter: City = { x: canvasDimention / 2, y: canvasDimention / 2, demand: 0 };
+        const maxDem = 100;
+        const depotCenter: City = { x: maxDem / 2, y: maxDem / 2, demand: 0 };
         cities.push(depotCenter);
         for (let i = 1; i < totalCities; i++) {
             // Give it some padding
-            let x = Math.floor(Math.random() * (canvasDimention - 20));
-            let y = Math.floor(Math.random() * (canvasDimention - 20));
+            let x = Math.floor(Math.random() * (maxDem - 20));
+            let y = Math.floor(Math.random() * (maxDem - 20));
             x += 10;
             y += 10;
             const v = { x, y, demand: i };
@@ -96,7 +97,7 @@ export class Population {
     onePointcrossover(parentA: Member, parentB: Member): Member {
         const parentARoute = parentA.solution.split(',');
         const parentBRoute = parentB.solution.split(',');
-        const point = Math.floor(Math.random() * parentARoute.length);
+        const point = this.getRandomInt(2, parentARoute.length - 2);
         const child = parentARoute.slice(0, point);
         for (let i = 0; i < parentBRoute.length; i++) {
             const city = parentBRoute[i];
@@ -108,5 +109,11 @@ export class Population {
     getBestMemberOfGeneration(): Member {
         const sorted = [...this.population].sort((memberA, memberB) => memberA.fitness - memberB.fitness);
         return sorted[0];
+    }
+
+    getRandomInt(min: number, max: number) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
     }
 }
